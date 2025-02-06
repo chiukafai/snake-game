@@ -13,9 +13,11 @@
             background-color: #000;
             color: #fff;
             font-family: Arial, sans-serif;
+            overflow: hidden; /* 防止页面滚动 */
         }
         canvas {
             border: 2px solid #fff;
+            touch-action: none; /* 防止触摸时触发滚动 */
         }
         button {
             margin: 10px;
@@ -37,13 +39,12 @@
     </div>
     <div class="share-info">
         <p>分享此游戏：</p>
-        <input type="text" id="shareLink" value="https://yourwebsite.com/snake-game" readonly style="width: 300px; padding: 5px;">
+        <input type="text" id="shareLink" value="https://chiukafai.github.io/snake-game/" readonly style="width: 300px; padding: 5px;">
         <button id="copyButton">复制链接</button>
     </div>
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-
         const box = 20;
         let snake = [{ x: 200, y: 200 }];
         let food = { x: Math.floor(Math.random() * 20) * box, y: Math.floor(Math.random() * 20) * box };
@@ -52,7 +53,7 @@
         let score = 0;
         let game = null;
         let paused = false;
-        let speed = 500; // 初始速度为500ms（减半）
+        let speed = 500; // 初始速度为500ms
 
         document.addEventListener('keydown', handleKeyPress);
 
@@ -61,7 +62,6 @@
             if (event.keyCode === 38 && direction !== 'DOWN') nextDirection = 'UP';
             if (event.keyCode === 39 && direction !== 'LEFT') nextDirection = 'RIGHT';
             if (event.keyCode === 40 && direction !== 'UP') nextDirection = 'DOWN';
-
             if (event.keyCode === 112) restartGame(); // F1
             if (event.keyCode === 113) togglePause();  // F2
         }
@@ -101,8 +101,7 @@
             if (headX === food.x && headY === food.y) {
                 score++;
                 food = { x: Math.floor(Math.random() * 20) * box, y: Math.floor(Math.random() * 20) * box };
-                speed += 500; // 每增加一个圆圈，速度增加0.5秒
-                if (speed > 2000) speed = 2000; // 最大速度限制
+                speed = Math.max(100, speed - 50); // 每次得分后速度加快，最低速度为100ms
             } else {
                 snake.pop();
             }
@@ -167,11 +166,15 @@
         document.getElementById('pauseButton').addEventListener('click', togglePause);
 
         // 复制链接功能
-        document.getElementById('copyButton').addEventListener('click', () => {
+        document.getElementById('copyButton').addEventListener('click', async () => {
             const shareLink = document.getElementById('shareLink');
-            shareLink.select();
-            document.execCommand('copy');
-            alert('链接已复制到剪贴板！');
+            try {
+                await navigator.clipboard.writeText(shareLink.value);
+                alert('链接已复制到剪贴板！');
+            } catch (err) {
+                console.error('无法复制链接：', err);
+                alert('复制失败，请手动复制链接！');
+            }
         });
 
         startGame();
