@@ -49,22 +49,18 @@
         let snake = [{ x: 200, y: 200 }];
         let food = { x: Math.floor(Math.random() * 20) * box, y: Math.floor(Math.random() * 20) * box };
         let direction = 'RIGHT';
-        let nextDirection = 'RIGHT'; // 用于解决方向灵敏度问题
         let score = 0;
-        let game = null;
         let paused = false;
-        let speed = 500; // 初始速度为500ms
+        let speed = 100; // 初始速度为100ms
+        let lastTime = 0;
 
-        document.addEventListener('keydown', handleKeyPress);
-
-        function handleKeyPress(event) {
-            if (event.keyCode === 37 && direction !== 'RIGHT') nextDirection = 'LEFT';
-            if (event.keyCode === 38 && direction !== 'DOWN') nextDirection = 'UP';
-            if (event.keyCode === 39 && direction !== 'LEFT') nextDirection = 'RIGHT';
-            if (event.keyCode === 40 && direction !== 'UP') nextDirection = 'DOWN';
-            if (event.keyCode === 112) restartGame(); // F1
-            if (event.keyCode === 113) togglePause();  // F2
-        }
+        document.addEventListener('keydown', (event) => {
+            const key = event.keyCode;
+            if (key === 37 && direction !== 'RIGHT') direction = 'LEFT';
+            if (key === 38 && direction !== 'DOWN') direction = 'UP';
+            if (key === 39 && direction !== 'LEFT') direction = 'RIGHT';
+            if (key === 40 && direction !== 'UP') direction = 'DOWN';
+        });
 
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -90,9 +86,6 @@
             let headX = snake[0].x;
             let headY = snake[0].y;
 
-            // 更新方向
-            direction = nextDirection;
-
             if (direction === 'LEFT') headX -= box;
             if (direction === 'UP') headY -= box;
             if (direction === 'RIGHT') headX += box;
@@ -101,7 +94,7 @@
             if (headX === food.x && headY === food.y) {
                 score++;
                 food = { x: Math.floor(Math.random() * 20) * box, y: Math.floor(Math.random() * 20) * box };
-                speed = Math.max(100, speed - 50); // 每次得分后速度加快，最低速度为100ms
+                speed = Math.max(50, speed - 10); // 每次得分后速度加快，最低速度为50ms
             } else {
                 snake.pop();
             }
@@ -113,8 +106,8 @@
                 headY < 0 || headY >= canvas.height ||
                 collision(newHead, snake)
             ) {
-                clearInterval(game);
                 alert('游戏结束！你的得分是：' + score);
+                restartGame();
                 return;
             }
 
@@ -132,40 +125,43 @@
             return false;
         }
 
+        function gameLoop(timestamp) {
+            if (!lastTime) lastTime = timestamp;
+            const deltaTime = timestamp - lastTime;
+
+            if (deltaTime >= speed) {
+                draw();
+                lastTime = timestamp;
+            }
+
+            if (!paused) {
+                requestAnimationFrame(gameLoop);
+            }
+        }
+
         function startGame() {
-            if (game) clearInterval(game);
-            game = setInterval(draw, speed);
+            paused = false;
+            lastTime = 0;
+            requestAnimationFrame(gameLoop);
         }
 
         function restartGame() {
-            clearInterval(game);
             snake = [{ x: 200, y: 200 }];
             food = { x: Math.floor(Math.random() * 20) * box, y: Math.floor(Math.random() * 20) * box };
             direction = 'RIGHT';
-            nextDirection = 'RIGHT';
             score = 0;
-            speed = 500; // 重置速度
-            paused = false;
-            document.getElementById('pauseButton').textContent = '暂停';
+            speed = 100; // 重置速度
             startGame();
         }
 
         function togglePause() {
-            if (paused) {
-                paused = false;
-                document.getElementById('pauseButton').textContent = '暂停';
-                startGame();
-            } else {
-                paused = true;
-                document.getElementById('pauseButton').textContent = '继续';
-                clearInterval(game);
-            }
+            paused = !paused;
+            document.getElementById('pauseButton').textContent = paused ? '继续' : '暂停';
         }
 
         document.getElementById('restartButton').addEventListener('click', restartGame);
         document.getElementById('pauseButton').addEventListener('click', togglePause);
 
-        // 复制链接功能
         document.getElementById('copyButton').addEventListener('click', async () => {
             const shareLink = document.getElementById('shareLink');
             try {
