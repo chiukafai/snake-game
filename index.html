@@ -50,18 +50,32 @@
         let food = { x: Math.floor(Math.random() * 20) * box, y: Math.floor(Math.random() * 20) * box };
         let direction = 'RIGHT';
         let score = 0;
-        let paused = false;
+        let paused = true; // 游戏初始状态为停止
         let speed = 100; // 初始速度为100ms
         let lastTime = 0;
 
         // 监听键盘事件
         document.addEventListener('keydown', (event) => {
             const key = event.keyCode;
+
+            // 按下方向键后启动游戏
+            if (paused && (key === 37 || key === 38 || key === 39 || key === 40)) {
+                paused = false;
+                startGame();
+            }
+
+            // 更新方向
             if (key === 37 && direction !== 'RIGHT') direction = 'LEFT';
             if (key === 38 && direction !== 'DOWN') direction = 'UP';
             if (key === 39 && direction !== 'LEFT') direction = 'RIGHT';
             if (key === 40 && direction !== 'UP') direction = 'DOWN';
         });
+
+        // 绘制背景
+        function drawBackground() {
+            ctx.fillStyle = '#228B22'; // 草地绿色
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
 
         // 绘制蛇
         function drawSnake() {
@@ -76,7 +90,7 @@
                     segment.y + box / 2,
                     radius
                 );
-                gradient.addColorStop(0, i === 0 ? '#006400' : '#228B22'); // 深绿色到浅绿色
+                gradient.addColorStop(0, i === 0 ? '#006400' : '#C5B8CF'); // 深绿色到浅绿色
                 gradient.addColorStop(1, '#32CD32');
 
                 ctx.beginPath();
@@ -134,8 +148,7 @@
 
         // 游戏主循环
         function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+            drawBackground();
             drawSnake();
             drawFood();
 
@@ -199,7 +212,6 @@
 
         // 开始游戏
         function startGame() {
-            paused = false;
             lastTime = 0;
             requestAnimationFrame(gameLoop);
         }
@@ -211,13 +223,14 @@
             direction = 'RIGHT';
             score = 0;
             speed = 100; // 重置速度
-            startGame();
+            paused = true; // 游戏重新开始时处于停止状态
         }
 
         // 暂停/继续游戏
         function togglePause() {
             paused = !paused;
             document.getElementById('pauseButton').textContent = paused ? '继续' : '暂停';
+            if (!paused) startGame();
         }
 
         // 复制链接功能
@@ -236,8 +249,8 @@
         document.getElementById('restartButton').addEventListener('click', restartGame);
         document.getElementById('pauseButton').addEventListener('click', togglePause);
 
-        // 启动游戏
-        startGame();
+        // 初始化游戏
+        drawBackground(); // 绘制背景
     </script>
 </body>
 </html>
