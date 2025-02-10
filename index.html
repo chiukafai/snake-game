@@ -1,23 +1,30 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>贪吃蛇小游戏 - 优化版</title>
+    <title>贪吃蛇小游戏 - 触摸优化版</title>
     <style>
-        body {
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
             background-color: #000;
             color: #fff;
             font-family: Arial, sans-serif;
-            overflow: hidden; /* 防止页面滚动 */
         }
         canvas {
+            width: 100%;
+            height: 100%;
+            touch-action: none;
             border: 2px solid #fff;
-            touch-action: none; /* 防止触摸时触发滚动 */
+            position: absolute;
+            top: 0;
+            left: 0;
         }
         button {
             margin: 10px;
@@ -32,7 +39,7 @@
     </style>
 </head>
 <body>
-    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <canvas id="gameCanvas"></canvas>
     <div>
         <button id="restartButton">重新游戏</button>
         <button id="pauseButton">暂停</button>
@@ -52,45 +59,40 @@
         let food = { x: Math.floor(Math.random() * 19 + 1) * box, y: Math.floor(Math.random() * 19 + 1) * box };
         let direction = 'RIGHT';
         let score = 0;
-        let paused = true; // 游戏初始状态为停止
-        let speed = 100; // 初始速度为100ms
+        let paused = true;
+        let speed = 100;
         let lastTime = 0;
+
+        // 动态调整画布大小
+        const scale = window.innerWidth < 600 ? 0.8 : 1;
+        canvas.width = 400 * scale;
+        canvas.height = 400 * scale;
+
+        window.addEventListener('resize', () => {
+            const newScale = window.innerWidth < 600 ? 0.8 : 1;
+            canvas.width = 400 * newScale;
+            canvas.height = 400 * newScale;
+        });
 
         // 音效
         const eatSound = document.getElementById('eatSound');
         const gameOverSound = document.getElementById('gameOverSound');
 
-        // 监听键盘事件
-        document.addEventListener('keydown', (event) => {
-            const key = event.keyCode;
-
-            // 按下方向键后启动游戏
-            if (paused && (key === 37 || key === 38 || key === 39 || key === 40)) {
-                paused = false;
-                startGame();
-            }
-
-            // 更新方向
-            if (key === 37 && direction !== 'RIGHT') direction = 'LEFT';
-            if (key === 38 && direction !== 'DOWN') direction = 'UP';
-            if (key === 39 && direction !== 'LEFT') direction = 'RIGHT';
-            if (key === 40 && direction !== 'UP') direction = 'DOWN';
-        });
-
-        // 触摸屏支持
+        // 触摸事件
         let touchStartX = 0;
         let touchStartY = 0;
-        canvas.addEventListener('touchstart', handleTouchStart, false);
-        canvas.addEventListener('touchmove', handleTouchMove, false);
 
-        function handleTouchStart(event) {
+        canvas.addEventListener('touchstart', (event) => {
+            event.preventDefault();
             const touch = event.touches[0];
             touchStartX = touch.clientX;
             touchStartY = touch.clientY;
-        }
+        }, false);
 
-        function handleTouchMove(event) {
+        canvas.addEventListener('touchmove', (event) => {
+            event.preventDefault();
             if (!touchStartX || !touchStartY) return;
+
             const touch = event.touches[0];
             const diffX = touch.clientX - touchStartX;
             const diffY = touch.clientY - touchStartY;
@@ -103,14 +105,13 @@
 
             touchStartX = null;
             touchStartY = null;
-        }
+        }, false);
 
-        // 绘制动态背景
+        // 绘制背景
         function drawBackground() {
-            ctx.fillStyle = '#C5B8CF'; // 灰色背景
+            ctx.fillStyle = '#C5B8CF';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 动态草叶效果
             for (let i = 0; i < 50; i++) {
                 const x = Math.random() * canvas.width;
                 const y = Math.random() * canvas.height;
@@ -127,7 +128,7 @@
         function drawSnake() {
             for (let i = 0; i < snake.length; i++) {
                 const segment = snake[i];
-                const radius = box / 2 - (i / snake.length) * 5; // 尾巴逐渐变细
+                const radius = box / 2 - (i / snake.length) * 5;
                 const gradient = ctx.createRadialGradient(
                     segment.x + box / 2,
                     segment.y + box / 2,
@@ -136,7 +137,7 @@
                     segment.y + box / 2,
                     radius
                 );
-                gradient.addColorStop(0, i === 0 ? '#2E8B57' : '#3CB371'); // 深绿色到浅绿色
+                gradient.addColorStop(0, i === 0 ? '#2E8B57' : '#3CB371');
                 gradient.addColorStop(1, '#90EE90');
 
                 ctx.beginPath();
@@ -145,34 +146,33 @@
                 ctx.fill();
                 ctx.closePath();
 
-                // 绘制蛇的眼睛（仅头部）
                 if (i === 0) {
                     ctx.fillStyle = 'white';
                     ctx.beginPath();
-                    ctx.arc(segment.x + box / 2 + 5, segment.y + box / 2 - 5, 2, 0, Math.PI * 2); // 左眼
+                    ctx.arc(segment.x + box / 2 + 5, segment.y + box / 2 - 5, 2, 0, Math.PI * 2);
                     ctx.fill();
                     ctx.closePath();
 
                     ctx.beginPath();
-                    ctx.arc(segment.x + box / 2 + 5, segment.y + box / 2 + 5, 2, 0, Math.PI * 2); // 右眼
+                    ctx.arc(segment.x + box / 2 + 5, segment.y + box / 2 + 5, 2, 0, Math.PI * 2);
                     ctx.fill();
                     ctx.closePath();
 
                     ctx.fillStyle = 'black';
                     ctx.beginPath();
-                    ctx.arc(segment.x + box / 2 + 6, segment.y + box / 2 - 5, 1, 0, Math.PI * 2); // 左眼瞳孔
+                    ctx.arc(segment.x + box / 2 + 6, segment.y + box / 2 - 5, 1, 0, Math.PI * 2);
                     ctx.fill();
                     ctx.closePath();
 
                     ctx.beginPath();
-                    ctx.arc(segment.x + box / 2 + 6, segment.y + box / 2 + 5, 1, 0, Math.PI * 2); // 右眼瞳孔
+                    ctx.arc(segment.x + box / 2 + 6, segment.y + box / 2 + 5, 1, 0, Math.PI * 2);
                     ctx.fill();
                     ctx.closePath();
                 }
             }
         }
 
-        // 绘制发光食物
+        // 绘制食物
         function drawFood() {
             const gradient = ctx.createRadialGradient(
                 food.x + box / 2,
@@ -208,12 +208,12 @@
 
             if (headX === food.x && headY === food.y) {
                 score++;
-                eatSound.play(); // 播放吃食物的音效
+                eatSound.play();
                 food = {
-                    x: Math.floor(Math.random() * 19 + 1) * box, // 修改金豆生成范围
-                    y: Math.floor(Math.random() * 19 + 1) * box  // 修改金豆生成范围
+                    x: Math.floor(Math.random() * 19 + 1) * box,
+                    y: Math.floor(Math.random() * 19 + 1) * box
                 };
-                speed = Math.max(50, speed - 10); // 每次得分后速度加快，最低速度为50ms
+                speed = Math.max(50, speed - 10);
             } else {
                 snake.pop();
             }
@@ -225,7 +225,7 @@
                 headY < 0 || headY >= canvas.height ||
                 collision(newHead, snake)
             ) {
-                gameOverSound.play(); // 播放游戏结束的音效
+                gameOverSound.play();
                 alert('游戏结束！你的得分是：' + score);
                 restartGame();
                 return;
@@ -270,11 +270,11 @@
         // 重新开始游戏
         function restartGame() {
             snake = [{ x: 200, y: 200 }];
-            food = { x: Math.floor(Math.random() * 19 + 1) * box, y: Math.floor(Math.random() * 19 + 1) * box }; // 修改金豆生成范围
+            food = { x: Math.floor(Math.random() * 19 + 1) * box, y: Math.floor(Math.random() * 19 + 1) * box };
             direction = 'RIGHT';
             score = 0;
-            speed = 100; // 重置速度
-            paused = true; // 游戏重新开始时处于停止状态
+            speed = 100;
+            paused = true;
         }
 
         // 暂停/继续游戏
