@@ -47,7 +47,7 @@
         const ctx = canvas.getContext('2d');
         const box = 20;
         let snake = [{ x: 200, y: 200 }];
-        let food = { x: Math.floor(Math.random() * 20) * box, y: Math.floor(Math.random() * 20) * box };
+        let food = { x: Math.floor(Math.random() * 19 + 1) * box, y: Math.floor(Math.random() * 19 + 1) * box }; // 修改金豆生成范围
         let direction = 'RIGHT';
         let score = 0;
         let paused = true; // 游戏初始状态为停止
@@ -73,7 +73,7 @@
 
         // 绘制背景
         function drawBackground() {
-            ctx.fillStyle = '#C5B8CF'; // 草地绿色
+            ctx.fillStyle = '#C5B8CF'; // 灰色背景
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
 
@@ -90,8 +90,8 @@
                     segment.y + box / 2,
                     radius
                 );
-                gradient.addColorStop(0, i === 0 ? '#006400' : '#C5B8CF'); // 深绿色到浅绿色
-                gradient.addColorStop(1, '#32CD32');
+                gradient.addColorStop(0, i === 0 ? '#2E8B57' : '#3CB371'); // 深绿色到浅绿色
+                gradient.addColorStop(1, '#90EE90');
 
                 ctx.beginPath();
                 ctx.arc(segment.x + box / 2, segment.y + box / 2, radius, 0, Math.PI * 2);
@@ -162,7 +162,10 @@
 
             if (headX === food.x && headY === food.y) {
                 score++;
-                food = { x: Math.floor(Math.random() * 20) * box, y: Math.floor(Math.random() * 20) * box };
+                food = {
+                    x: Math.floor(Math.random() * 19 + 1) * box, // 修改金豆生成范围
+                    y: Math.floor(Math.random() * 19 + 1) * box  // 修改金豆生成范围
+                };
                 speed = Math.max(50, speed - 10); // 每次得分后速度加快，最低速度为50ms
             } else {
                 snake.pop();
@@ -219,7 +222,7 @@
         // 重新开始游戏
         function restartGame() {
             snake = [{ x: 200, y: 200 }];
-            food = { x: Math.floor(Math.random() * 20) * box, y: Math.floor(Math.random() * 20) * box };
+            food = { x: Math.floor(Math.random() * 19 + 1) * box, y: Math.floor(Math.random() * 19 + 1) * box }; // 修改金豆生成范围
             direction = 'RIGHT';
             score = 0;
             speed = 100; // 重置速度
