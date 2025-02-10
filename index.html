@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>贪吃蛇小游戏</title>
+    <title>贪吃蛇小游戏 - 优化版</title>
     <style>
         body {
             display: flex;
@@ -42,17 +42,23 @@
         <input type="text" id="shareLink" value="https://chiukafai.github.io/snake-game/" readonly style="width: 300px; padding: 5px;">
         <button id="copyButton">复制链接</button>
     </div>
+    <audio id="eatSound" src="https://www.soundjay.com/button/beep-07.mp3" preload="auto"></audio>
+    <audio id="gameOverSound" src="https://www.soundjay.com/misc/sounds/fail-trombone-01.mp3" preload="auto"></audio>
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const box = 20;
         let snake = [{ x: 200, y: 200 }];
-        let food = { x: Math.floor(Math.random() * 19 + 1) * box, y: Math.floor(Math.random() * 19 + 1) * box }; // 修改金豆生成范围
+        let food = { x: Math.floor(Math.random() * 19 + 1) * box, y: Math.floor(Math.random() * 19 + 1) * box };
         let direction = 'RIGHT';
         let score = 0;
         let paused = true; // 游戏初始状态为停止
         let speed = 100; // 初始速度为100ms
         let lastTime = 0;
+
+        // 音效
+        const eatSound = document.getElementById('eatSound');
+        const gameOverSound = document.getElementById('gameOverSound');
 
         // 监听键盘事件
         document.addEventListener('keydown', (event) => {
@@ -71,10 +77,50 @@
             if (key === 40 && direction !== 'UP') direction = 'DOWN';
         });
 
-        // 绘制背景
+        // 触摸屏支持
+        let touchStartX = 0;
+        let touchStartY = 0;
+        canvas.addEventListener('touchstart', handleTouchStart, false);
+        canvas.addEventListener('touchmove', handleTouchMove, false);
+
+        function handleTouchStart(event) {
+            const touch = event.touches[0];
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+        }
+
+        function handleTouchMove(event) {
+            if (!touchStartX || !touchStartY) return;
+            const touch = event.touches[0];
+            const diffX = touch.clientX - touchStartX;
+            const diffY = touch.clientY - touchStartY;
+
+            if (Math.abs(diffX) > Math.abs(diffY)) {
+                direction = diffX > 0 ? 'RIGHT' : 'LEFT';
+            } else {
+                direction = diffY > 0 ? 'DOWN' : 'UP';
+            }
+
+            touchStartX = null;
+            touchStartY = null;
+        }
+
+        // 绘制动态背景
         function drawBackground() {
             ctx.fillStyle = '#C5B8CF'; // 灰色背景
             ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 动态草叶效果
+            for (let i = 0; i < 50; i++) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                const height = Math.random() * 10 + 5;
+                ctx.strokeStyle = 'rgba(0, 255, 0, 0.5)';
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x, y - height);
+                ctx.stroke();
+            }
         }
 
         // 绘制蛇
@@ -126,7 +172,7 @@
             }
         }
 
-        // 绘制食物（金豆）
+        // 绘制发光食物
         function drawFood() {
             const gradient = ctx.createRadialGradient(
                 food.x + box / 2,
@@ -136,8 +182,8 @@
                 food.y + box / 2,
                 box / 2
             );
-            gradient.addColorStop(0, '#FFD700'); // 金色
-            gradient.addColorStop(1, '#FFA500'); // 橙色
+            gradient.addColorStop(0, 'rgba(255, 215, 0, 1)');
+            gradient.addColorStop(1, 'rgba(255, 165, 0, 0.5)');
 
             ctx.beginPath();
             ctx.arc(food.x + box / 2, food.y + box / 2, box / 2, 0, Math.PI * 2);
@@ -162,6 +208,7 @@
 
             if (headX === food.x && headY === food.y) {
                 score++;
+                eatSound.play(); // 播放吃食物的音效
                 food = {
                     x: Math.floor(Math.random() * 19 + 1) * box, // 修改金豆生成范围
                     y: Math.floor(Math.random() * 19 + 1) * box  // 修改金豆生成范围
@@ -178,6 +225,7 @@
                 headY < 0 || headY >= canvas.height ||
                 collision(newHead, snake)
             ) {
+                gameOverSound.play(); // 播放游戏结束的音效
                 alert('游戏结束！你的得分是：' + score);
                 restartGame();
                 return;
